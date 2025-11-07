@@ -4,7 +4,7 @@ const { Pool } = require('pg');
 // pg sẽ tự động đọc các thông tin kết nối từ biến môi trường DATABASE_URL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Nếu deploy trên Render, cần có ssl
+  // Nếu deploy trên Render, cần có ssl cho kết nối production
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
@@ -12,6 +12,7 @@ const pool = new Pool({
 const initializeDb = async () => {
   const client = await pool.connect();
   try {
+    console.log('Connecting to database to initialize tables...');
     // Tạo bảng users để lưu email và profile
     // Dùng kiểu dữ liệu JSONB để lưu profile một cách linh hoạt
     await client.query(`
@@ -32,7 +33,7 @@ const initializeDb = async () => {
       );
     `);
     
-    console.log('Database tables are ready.');
+    console.log('Database tables checked/created successfully.');
   } catch (err) {
     console.error('Error initializing database:', err);
   } finally {
