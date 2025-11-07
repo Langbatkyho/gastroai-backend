@@ -14,18 +14,10 @@
     "@google/genai": "^1.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-<<<<<<< HEAD
     "express": "^4.19.2",
     "pg": "^8.11.3"
-=======
-    "express": "^4.19.2"
->>>>>>> d7f67ec34ed96d5a7a5650a2336d8ada8a2ff78a
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> d7f67ec34ed96d5a7a5650a2336d8ada8a2ff78a
