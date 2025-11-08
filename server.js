@@ -108,6 +108,30 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.get('/api/me', authenticateToken, async (req, res) => {
+    try {
+        const email = req.user.email;
+        const userResult = await db.query('SELECT email, user_profile, encrypted_gemini_key FROM users WHERE email = $1', [email]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userResult.rows[0];
+        const symptomsResult = await db.query('SELECT log_data FROM symptoms WHERE user_email = $1 ORDER BY created_at ASC', [email]);
+
+        res.json({
+            user: {
+                email: user.email,
+                profile: user.user_profile,
+                hasApiKey: !!user.encrypted_gemini_key,
+            },
+            symptoms: symptomsResult.rows.map(row => row.log_data)
+        });
+    } catch (error) {
+        console.error('Fetch user data error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // --- User Data Endpoints (Protected) ---
 app.post('/api/api-key', authenticateToken, async (req, res) => {
     const { apiKey } = req.body;
