@@ -21,6 +21,12 @@ if (!JWT_SECRET || !ENCRYPTION_KEY || ENCRYPTION_KEY.length !== 32) {
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// --- Health Check Endpoint (Keep Alive) ---
+// Endpoint này nhẹ, không gọi DB, dùng để GitHub Actions ping giữ server không bị ngủ
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
+
 // --- Crypto Helpers ---
 const IV_LENGTH = 16;
 const encrypt = (text) => {

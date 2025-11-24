@@ -1,0 +1,50 @@
+name: Keep Alive Backend
+
+on:
+  schedule:
+    # Chạy mỗi 14 phút (Render Free Tier ngủ sau 15 phút không hoạt động)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Cho phép chạy thủ công để test
+
+jobs:
+  wake-up:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up Render Service
+        run: |
+          # --- THAY ĐỔI URL DƯỚI ĐÂY THÀNH URL BACKEND RENDER CỦA BẠN ---
+          URL="https://gastroai-backend.onrender.com/health"
+          
+          # Cấu hình: Thử tối đa 10 lần, mỗi lần chờ 30 giây (Tổng cộng ~5 phút)
+          MAX_RETRIES=10
+          WAIT_SECONDS=30
+          
+          echo "Starting wake-up routine for: $URL"
+          
+          for ((i=1; i<=MAX_RETRIES; i++)); do
+            echo "Attempt $i/$MAX_RETRIES..."
+            
+            # Gửi request GET
+            # -A: Giả lập User Agent để tránh bị chặn
+            # --max-time 30: Timeout 30s
+            STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 -A "GitHubActions-KeepAlive" "$URL")
+            
+            echo "Server returned status: $STATUS_CODE"
+            
+            # Kiểm tra thành công:
+            # Mong đợi nhất là 200 (OK) từ /health
+            # Tuy nhiên, chấp nhận cả 404/401/403 vì điều đó chứng tỏ server ĐÃ TỈNH DẬY
+            if [[ "$STATUS_CODE" =~ ^(2[0-9][0-9]|3[0-9][0-9]|404|401|403)$ ]]; then
+              echo "✅ Success! Server is active (Status: $STATUS_CODE)."
+              exit 0
+            fi
+            
+            # Nếu gặp 502, 503 (Bad Gateway/Service Unavailable) hoặc 000 (Connection Failed), nghĩa là đang khởi động
+            if [ "$i" -lt "$MAX_RETRIES" ]; then
+              echo "Server responding with $STATUS_CODE (likely starting up). Sleeping for ${WAIT_SECONDS}s..."
+              sleep $WAIT_SECONDS
+            else
+              echo "❌ Failed to wake up server after $MAX_RETRIES attempts. Last status: $STATUS_CODE"
+              exit 1
+            fi
+          done
