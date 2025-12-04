@@ -52,6 +52,19 @@ const initializeDb = async () => {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
+
+    // Bước 4: Bảo mật Supabase (Fix lỗi RLS Disabled)
+    // Bật RLS để chặn truy cập từ Supabase Public API (PostgREST).
+    // Backend Node.js kết nối bằng user admin/postgres nên sẽ tự động Bypass RLS.
+    try {
+      console.log('Securing tables with RLS...');
+      await client.query(`ALTER TABLE users ENABLE ROW LEVEL SECURITY;`);
+      await client.query(`ALTER TABLE symptoms ENABLE ROW LEVEL SECURITY;`);
+      console.log('RLS enabled for users and symptoms tables.');
+    } catch (rlsError) {
+      // Bỏ qua lỗi nếu RLS đã được bật hoặc user không có quyền (ít xảy ra với admin connection)
+      console.log('Note on RLS:', rlsError.message);
+    }
     
     console.log('Database schema is up to date.');
 
